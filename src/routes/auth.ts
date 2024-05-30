@@ -1,5 +1,5 @@
-import { updateAvatar, updateUser } from "../controllers/auth";
-import { Router } from "express";
+import { Router } from 'express';
+import { updateAvatar, updateUser } from '../controllers/auth';
 
 const router = Router();
 

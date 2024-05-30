@@ -1,7 +1,7 @@
-import { Response, NextFunction } from "express";
+import { Response, NextFunction } from 'express';
 import User from '../models/user';
-import { NotFoundError, RequestError } from "../errors/errors";
-import { SessionRequest } from "../utils/interfaces";
+import { NotFoundError, RequestError } from '../errors';
+import { SessionRequest } from '../utils/interfaces';
 
 export const updateUser = (req: SessionRequest, res: Response, next: NextFunction) => {
   const { name, about } = req.query;
@@ -12,22 +12,22 @@ export const updateUser = (req: SessionRequest, res: Response, next: NextFunctio
     {
       $set: {
         name,
-        about
-      }
-    }
+        about,
+      },
+    },
   )
-  .then(async (user) => {
-    if (!user) {
-      throw new NotFoundError('Пользователь с таким ID не найден')
-    }
-    res.status(200).send({ _id, name, about });
-  })
-  .catch((err: Error) => {
-    err.name
-      ? next(new RequestError('Переданы некорректные данные при обновлении профиля'))
-      : next(err)
-  })
-}
+    .then(async (user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь с таким ID не найден');
+      }
+      res.status(200).send({ _id, name, about });
+    })
+    .catch((err: Error) => {
+      err.name
+        ? next(new RequestError('Переданы некорректные данные при обновлении профиля'))
+        : next(err);
+    });
+};
 
 export const updateAvatar = (req: SessionRequest, res: Response, next: NextFunction) => {
   const { avatar } = req.query;
@@ -37,19 +37,19 @@ export const updateAvatar = (req: SessionRequest, res: Response, next: NextFunct
     _id,
     {
       $set: {
-        avatar
-      }
-    }
+        avatar,
+      },
+    },
   )
-    .then(user => {
+    .then((user) => {
       if (!user) {
-        throw new NotFoundError('Пользователь с таким ID не найден')
+        throw new NotFoundError('Пользователь с таким ID не найден');
       }
-      res.status(200).send({ avatar })
+      res.status(200).send({ avatar });
     })
     .catch((err: Error) => {
       err.name
         ? next(new RequestError('Переданы некорректные данные при обновлении профиля'))
-        : next(err)
-    })
-}
+        : next(err);
+    });
+};

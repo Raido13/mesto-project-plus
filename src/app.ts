@@ -1,9 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
+import { SessionError } from './utils/interfaces';
 import userRouter from './routes/user';
 import cardRouter from './routes/card';
 import authRouter from './routes/auth';
-import { SessionError } from 'utils/interfaces';
 import auth from './middlewares/auth';
 
 const { PORT = 3000 } = process.env;
@@ -20,17 +20,17 @@ app.use('/cards', cardRouter);
 app.use('/users', authRouter);
 
 app.use((err: SessionError, req: Request, res: Response, next: NextFunction) => {
-    const { statusCode = 500, message } = err;
+  const { statusCode = 500, message } = err;
 
-    res
-        .status(statusCode)
-        .send({
-            message: statusCode === 500
-                ? 'Ошибка на сервере'
-                : message
-        })
-})
+  res
+    .status(statusCode)
+    .send({
+      message: statusCode === 500
+        ? 'Ошибка на сервере'
+        : message,
+    });
+});
 
 app.listen(PORT, () => {
-    console.log(`App listening on port ${PORT}`)
-})
+  console.log(`App listening on port ${PORT}`);
+});
