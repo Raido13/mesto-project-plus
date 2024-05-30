@@ -8,7 +8,8 @@ export const getUser = (req: Request, res: Response, next: NextFunction) => {
   return User.findById(_id)
     .then(user => {
       if (!user) throw new NotFoundError('Пользователь с таким ID не найден');
-      res.send({ user })
+      const { name, _id, about, avatar } = user;
+      res.send({ name, _id, about, avatar })
     })
     .catch((err: Error) => {
       err.name
@@ -24,14 +25,14 @@ export const getAllUsers = (req: Request, res: Response, next: NextFunction) => 
 }
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
-  const { name, about, avatar } = req.body;
+  const { name, about, avatar } = req.query;
 
   User.create({
-    name: name,
-    about: about,
-    avatar: avatar
+    name,
+    about,
+    avatar
   })
-    .then(user => res.status(201).send(user))
+    .then(user => res.status(201).send({ user }))
     .catch((err: Error) => {
       err.name
         ? next(new RequestError('Некорректные данные при создании пользователя'))

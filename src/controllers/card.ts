@@ -2,45 +2,44 @@ import { Request, Response, NextFunction } from "express";
 import Card from '../models/card';
 import User from '../models/user';
 import { NotFoundError, RequestError } from "../errors/errors";
+import { SessionRequest } from "utils/interfaces";
 
 export const getAllCards = (req: Request, res: Response, next: NextFunction) => {
   Card.find({})
-    .then(cards => res.status(201).send(cards))
+    .then(cards => res.status(201).send({ cards }))
     .catch(next)
 }
 
-export const createCard = (req: Request, res: Response, next: NextFunction) => {
-  const { user, name, link } = req.body;
-  const _id = user?._id;
+export const createCard = (req: SessionRequest, res: Response, next: NextFunction) => {
+  const { name, link } = req.query;
+  const owner = req.user?._id;
 
   return Card.create({
-    name: name,
-    link: link,
-    owner: _id,
+    name,
+    link,
+    owner,
     createCard: Date.now()
   })
-    .then(card => res.send(card))
+    .then(card => res.send({ card }))
     .catch((err: Error) => {
-      switch(err.name) {
-        case 'ValidationError': next(new RequestError('Некорректные данные при создании карточки'));
-        case 'CastError': next(new RequestError('Некорректные данные при создании карточки'));
-        default: next(err)
-      }
-    });
+      err.name
+        ? next(new NotFoundError('Некорректные данные при создании карточки'))
+        : next(err)
+    })
 }
 
-export const addLike = (req: Request, res: Response, next: NextFunction) => {
-  const { user, cardId } = req.body;
-  const _id = user?._id;
+export const addLike = (req: SessionRequest, res: Response, next: NextFunction) => {
+  const userId = req.user?._id;
+  const { cardId } = req.params;
 
-  return User.findById(_id)
+  return User.findById(userId)
     .then(user => {
       if (!user) {
-        throw new NotFoundError('Пользователь с таким ID не существует')
+        throw new NotFoundError('Переданы некорректные данные для постановки лайка')
       }
       return Card.findByIdAndUpdate(
         cardId,
-        {$addToSet: { likes: _id }}
+        {$addToSet: { likes: userId }}
       )
         .then(() => res.status(200).send({ message: 'Добавлен Лайк' }))
         .catch((err: Error) => {
@@ -51,17 +50,16 @@ export const addLike = (req: Request, res: Response, next: NextFunction) => {
     })
     .catch((err: Error) => {
       err.name
-        ? next(new NotFoundError('Пользователь с таким ID не существует'))
+        ? next(new NotFoundError('Переданы некорректные данные для постановки лайка'))
         : next(err)
     })
 }
 
 export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
-  const { user, cardId } = req.body;
-  const _id = user?._id;
+  const { cardId } = req.params;
 
-  return Card.findByIdAndDelete({ cardId })
-    .then(() => res.status(200).send({}))
+  return Card.findOneAndDelete({ cardId })
+    .then(() => res.status(200).send({ message: 'Карточка удалена' }))
     .catch((err: Error) => {
       err.name
         ? next(new NotFoundError('Карточка с таким ID не существует'))
@@ -69,20 +67,22 @@ export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
     })
 }
 
-export const removeLike = (req: Request, res: Response, next: NextFunction) => {
-  const { user, cardId } = req.body;
-  const _id = user?._id;
+export const removeLike = (req: SessionRequest, res: Response, next: NextFunction) => {
+  const userId = req.user?._id;
+  const { cardId } = req.params;
 
-  return User.findById(_id)
+  return User.findById(userId)
     .then(user => {
       if (!user) {
-        throw new NotFoundError('Пользователь с таким ID не существует');
+        throw new NotFoundError('Переданы некорректные данные для постановки лайка');
       }
-      return Card.findByIdAndUpdate(
+      return Card.findOneAndUpdate({
         cardId,
-        {$addToSet: { likes: _id }}
-      )
-        .then(() => res.status(200).send({ message: 'Лайк убран' }))
+        $pull: { likes: userId }
+      })
+        .then(() => {
+          res.status(200).send({ message: 'Лайк убран' })
+        })
         .catch((err: Error) => {
           err.name
             ? next(new RequestError('Неудачная попытка убрать лайк'))
@@ -91,7 +91,7 @@ export const removeLike = (req: Request, res: Response, next: NextFunction) => {
     })
     .catch((err: Error) => {
       err.name
-        ? next(new NotFoundError('Карточка с таким ID не существует'))
+        ? next(new NotFoundError('Переданы некорректные данные для постановки лайка'))
         : next(err)
     })
 }

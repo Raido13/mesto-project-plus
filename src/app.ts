@@ -4,6 +4,7 @@ import userRouter from './routes/user';
 import cardRouter from './routes/card';
 import authRouter from './routes/auth';
 import { SessionError } from 'utils/interfaces';
+import auth from './middlewares/auth';
 
 const { PORT = 3000 } = process.env;
 const app = express();
@@ -13,6 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 
 mongoose.connect('mongodb://0.0.0.0:27017/mestodb');
 
+app.use(auth);
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
 app.use('/users', authRouter);
@@ -31,4 +33,4 @@ app.use((err: SessionError, req: Request, res: Response, next: NextFunction) => 
 
 app.listen(PORT, () => {
     console.log(`App listening on port ${PORT}`)
-}) 
+})
