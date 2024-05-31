@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import User from '../models/user';
 import { RequestError, NotFoundError } from '../errors';
 import { SessionRequest } from '../utils/interfaces';
+import { hash, compare } from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 export const getUser = (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.params;
@@ -12,7 +14,7 @@ export const getUser = (req: Request, res: Response, next: NextFunction) => {
       const {
         name, _id, about, avatar,
       } = user;
-      res.send({
+      res.status(201).send({
         name, _id, about, avatar,
       });
     })
@@ -30,16 +32,71 @@ export const getAllUsers = (req: Request, res: Response, next: NextFunction) => 
 };
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
-  const { name, about, avatar } = req.query;
+  const { email, password, name, about, avatar } = req.body;
 
-  User.create({
-    name,
-    about,
-    avatar,
-  })
-    .then((user) => res.status(201).send({ user }))
-    .catch(() => next(new RequestError('Некорректные данные при создании пользователя')));
+  User.find({ email })
+    .then((user) => {
+      if (user.length > 0) {
+        return new Error('UserHasFound')
+      } else {
+        hash(password, 10)
+          .then(hash => 
+            User.create({
+              email,
+              password: hash,
+              name,
+              about,
+              avatar,
+            })
+            .then((user) => res.status(201).send({ user }))
+            .catch((err) => {
+              switch (err.message) {
+                case 'UserHasFound': {
+                  next(new NotFoundError('Пользователь с таким email существует'));
+                  break;
+                }
+                default: next(new RequestError('Ошибка при создании нового пользователя'));
+              }
+            })
+          )
+      }
+    })
 };
+
+export const login = (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body;
+  const { NODE_ENV, JWT_SECRET } = process.env;
+
+  return User.findOne({ email }).select('password')
+    .orFail(new Error('UserNotFound'))
+    .then((user) => {
+      compare(password, user.password)
+        .then(isMatch =>
+          isMatch
+            ? { token: jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET as string : 'dev-secret-phrase', { expiresIn: '7d' }) }  
+            : new Error('PasswordNotMatch')
+        )
+        .then(token => 
+          token instanceof Error
+            ? token
+            : res.status(201).send(token)
+        )
+      }
+    )
+    .catch((err: Error) => {
+      switch (err.message) {
+        case 'UserNotFound': {
+          next(new NotFoundError('Пользователь с таким ID не существует'));
+          break;
+        }
+        case 'PasswordNotMatch': {
+          next(new NotFoundError('Неправильный пароль'));
+          break;
+        }
+        default: next(new RequestError('Ошибка при авторизации пользователя'));
+      }
+    })
+}
 
 export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFunction) => {
   const { name, about } = req.query;

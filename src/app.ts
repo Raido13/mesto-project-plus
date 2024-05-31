@@ -5,6 +5,8 @@ import userRouter from './routes/user';
 import cardRouter from './routes/card';
 import auth from './middlewares/auth';
 
+require('dotenv').config();
+
 const { PORT = 3000 } = process.env;
 const app = express();
 

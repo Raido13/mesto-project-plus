@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { SessionRequest } from '../utils/interfaces';
 import Card from '../models/card';
 import User from '../models/user';
-import { NotFoundError, RequestError } from '../errors';
+import { AuthError, NotFoundError, RequestError } from '../errors';
 
 export const getAllCards = (req: Request, res: Response, next: NextFunction) => {
   Card.find({})
@@ -55,16 +55,29 @@ export const addLike = (req: SessionRequest, res: Response, next: NextFunction) 
     });
 };
 
-export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
+export const deleteCard = (req: SessionRequest, res: Response, next: NextFunction) => {
+  const userId = req.user?._id;
   const { cardId } = req.params;
 
   return Card.findOneAndDelete({ cardId })
     .orFail(new Error('CardNotFound'))
-    .then(() => res.status(200).send({ message: 'Карточка удалена' }))
+    .then((card) =>
+      card.owner === userId
+        ? res.status(200).send({ message: 'Карточка удалена' })
+        : new Error('NotAuthor')
+    )
     .catch((err: Error) => {
-      err.message === 'CardNotFound'
-        ? next(new NotFoundError('Карточка с таким ID не существует'))
-        : next(new RequestError('Ошибка при удалении карточки'));
+      switch (err.message) {
+        case 'NotAuthor': {
+          next(new AuthError('Невозможно удалить чужую карточку'));
+          break;
+        }
+        case 'CardNotFound': {
+          next(new NotFoundError('Карточка с таким ID не существует'));
+          break;
+        }
+        default: next(new RequestError('Ошибка при удалении карточки'));
+      }
     });
 };
 

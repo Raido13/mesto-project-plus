@@ -4,7 +4,7 @@ interface ICard {
   name: string,
   link: string,
   createdAt: Date,
-  owner: mongoose.Schema.Types.ObjectId,
+  owner: mongoose.Schema.Types.ObjectId | String,
   likes: ObjectId[],
 }
 
@@ -18,12 +18,12 @@ const cardSchema = new mongoose.Schema<ICard>({
   link: {
     type: String,
     required: true,
+    validate: [ /https?:\/\/(?:www\.|(?!www))[\w\d-\._~:\/?#\[\]@!\$&'\(\)\*\+,;=]{1,}\.[\w]{2,}#?/.test, 'Невалидная ссылка' ]
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'user',
     required: true,
-    default: [],
   },
   likes: {
     type: [mongoose.Schema.Types.ObjectId],
