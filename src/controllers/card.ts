@@ -38,7 +38,8 @@ export const addLike = (req: SessionRequest, res: Response, next: NextFunction) 
       },
     )
       .orFail(new Error('CardNotFound'))
-      .then(() => res.status(200).send({ message: 'Добавлен Лайк' })))
+      .then(() => res.status(200).send({ message: 'Добавлен Лайк' }))
+    )
     .catch((err: Error) => {
       switch (err.message) {
         case 'UserNotFound': {
@@ -80,7 +81,8 @@ export const removeLike = (req: SessionRequest, res: Response, next: NextFunctio
       .orFail(new Error('CardNotFound'))
       .then(() => {
         res.status(200).send({ message: 'Лайк убран' });
-      }))
+      })
+    )
     .catch((err: Error) => {
       switch (err.message) {
         case 'UserNotFound': {
