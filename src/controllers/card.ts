@@ -20,7 +20,7 @@ export const createCard = (req: SessionRequest, res: Response, next: NextFunctio
     owner,
   })
     .then((card) => res.status(201).send({ card }))
-    .catch(() => next(new NotFoundError('Некорректные данные при создании карточки')));
+    .catch(() => next(new RequestError('Некорректные данные при создании карточки')));
 };
 
 export const addLike = (req: SessionRequest, res: Response, next: NextFunction) => {
