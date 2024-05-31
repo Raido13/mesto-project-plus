@@ -18,40 +18,39 @@ export const createCard = (req: SessionRequest, res: Response, next: NextFunctio
     name,
     link,
     owner,
-    createCard: Date.now(),
   })
-    .then((card) => res.send({ card }))
-    .catch((err: Error) => {
-      err.name
-        ? next(new NotFoundError('Некорректные данные при создании карточки'))
-        : next(err);
-    });
+    .then((card) => res.status(201).send({ card }))
+    .catch(() => next(new NotFoundError('Некорректные данные при создании карточки')));
 };
 
 export const addLike = (req: SessionRequest, res: Response, next: NextFunction) => {
-  const userId = req.user?._id;
+  const userId = '6658d79c762bf078abde3d14';
   const { cardId } = req.params;
 
   return User.findById(userId)
-    .then((user) => {
-      if (!user) {
-        throw new NotFoundError('Переданы некорректные данные для постановки лайка');
-      }
-      return Card.findByIdAndUpdate(
-        cardId,
-        { $addToSet: { likes: userId } },
-      )
-        .then(() => res.status(200).send({ message: 'Добавлен Лайк' }))
-        .catch((err: Error) => {
-          err.name
-            ? next(new NotFoundError('Карточка с таким ID не существует'))
-            : next(err);
-        });
-    })
+    .orFail(new Error('UserNotFound'))
+    .then(() => Card.findByIdAndUpdate(
+      cardId,
+      { $addToSet: { likes: userId } },
+      {
+        new: true,
+        runValidators: true,
+      },
+    )
+      .orFail(new Error('CardNotFound'))
+      .then(() => res.status(200).send({ message: 'Добавлен Лайк' })))
     .catch((err: Error) => {
-      err.name
-        ? next(new NotFoundError('Переданы некорректные данные для постановки лайка'))
-        : next(err);
+      switch (err.message) {
+        case 'UserNotFound': {
+          next(new NotFoundError('Пользователь с таким ID не существует'));
+          break;
+        }
+        case 'CardNotFound': {
+          next(new NotFoundError('Карточка с таким ID не существует'));
+          break;
+        }
+        default: next(new RequestError('Ошибка при добавлении лайка'));
+      }
     });
 };
 
@@ -59,11 +58,12 @@ export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
   const { cardId } = req.params;
 
   return Card.findOneAndDelete({ cardId })
+    .orFail(new Error('CardNotFound'))
     .then(() => res.status(200).send({ message: 'Карточка удалена' }))
     .catch((err: Error) => {
-      err.name
+      err.message === 'CardNotFound'
         ? next(new NotFoundError('Карточка с таким ID не существует'))
-        : next(err);
+        : next(new RequestError('Ошибка при удалении карточки'));
     });
 };
 
@@ -72,26 +72,26 @@ export const removeLike = (req: SessionRequest, res: Response, next: NextFunctio
   const { cardId } = req.params;
 
   return User.findById(userId)
-    .then((user) => {
-      if (!user) {
-        throw new NotFoundError('Переданы некорректные данные для постановки лайка');
-      }
-      return Card.findOneAndUpdate({
-        cardId,
-        $pull: { likes: userId },
-      })
-        .then(() => {
-          res.status(200).send({ message: 'Лайк убран' });
-        })
-        .catch((err: Error) => {
-          err.name
-            ? next(new RequestError('Неудачная попытка убрать лайк'))
-            : next(err);
-        });
+    .orFail(new Error('UserNotFound'))
+    .then(() => Card.findOneAndUpdate({
+      cardId,
+      $pull: { likes: userId },
     })
+      .orFail(new Error('CardNotFound'))
+      .then(() => {
+        res.status(200).send({ message: 'Лайк убран' });
+      }))
     .catch((err: Error) => {
-      err.name
-        ? next(new NotFoundError('Переданы некорректные данные для постановки лайка'))
-        : next(err);
+      switch (err.message) {
+        case 'UserNotFound': {
+          next(new NotFoundError('Пользователь с таким ID не существует'));
+          break;
+        }
+        case 'CardNotFound': {
+          next(new NotFoundError('Карточка с таким ID не существует'));
+          break;
+        }
+        default: next(new RequestError('Ошибка при удалении лайка'));
+      }
     });
 };

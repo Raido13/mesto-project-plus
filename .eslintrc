@@ -30,7 +30,7 @@
         ]
     },
     "rules": {
-      "no-underscore-dangle": "off",
+      "no-underscore-dangle": ["error", {"allow": ["_id"]}],
       "no-unused-vars": "off",
       "no-unused-expressions": ["error", { "allowTernary": true }],
         "import/extensions": [

@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import { SessionError } from './utils/interfaces';
 import userRouter from './routes/user';
 import cardRouter from './routes/card';
-import authRouter from './routes/auth';
 import auth from './middlewares/auth';
 
 const { PORT = 3000 } = process.env;
@@ -17,7 +16,6 @@ mongoose.connect('mongodb://0.0.0.0:27017/mestodb');
 app.use(auth);
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
-app.use('/users', authRouter);
 
 app.use((err: SessionError, req: Request, res: Response, next: NextFunction) => {
   const { statusCode = 500, message } = err;
