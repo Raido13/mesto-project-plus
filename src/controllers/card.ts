@@ -24,7 +24,7 @@ export const createCard = (req: SessionRequest, res: Response, next: NextFunctio
 };
 
 export const addLike = (req: SessionRequest, res: Response, next: NextFunction) => {
-  const userId = '6658d79c762bf078abde3d14';
+  const userId = req.user?._id;
   const { cardId } = req.params;
 
   return User.findById(userId)
