@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/user';
-import { NotFoundError, RequestError } from '../errors';
+import { RequestError } from '../errors';
 import { SessionRequest } from '../utils/interfaces';
 
 export const getUser = (req: Request, res: Response, next: NextFunction) => {
@@ -15,7 +15,7 @@ export const getUser = (req: Request, res: Response, next: NextFunction) => {
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new NotFoundError('Пользователь с таким ID не найден'));
+          next(new RequestError('Пользователь с таким ID не найден'));
           break;
         }
         default: next(err);
@@ -72,7 +72,7 @@ export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFun
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new NotFoundError('Пользователь с таким ID не найден'));
+          next(new RequestError('Пользователь с таким ID не найден'));
           break;
         }
         case 'ValidaitonError': {
@@ -106,7 +106,7 @@ export const updateUserAvatar = (req: SessionRequest, res: Response, next: NextF
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new NotFoundError('Пользователь с таким ID не найден'));
+          next(new RequestError('Пользователь с таким ID не найден'));
           break;
         }
         case 'ValidaitonError': {
