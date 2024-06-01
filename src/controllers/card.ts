@@ -19,7 +19,7 @@ export const createCard = (req: SessionRequest, res: Response, next: NextFunctio
     owner,
   })
     .then((card) => res.status(201).send({ card }))
-    .catch(() => next(new UnexpectedError('Некорректные данные при создании карточки')));
+    .catch(next);
 };
 
 export const addLike = (req: SessionRequest, res: Response, next: NextFunction) => {
@@ -46,7 +46,7 @@ export const addLike = (req: SessionRequest, res: Response, next: NextFunction) 
           next(new UnexpectedError('Ошибка при валидации'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при добавлении лайка'));
+        default: next(err);
       }
     });
 };
@@ -62,7 +62,7 @@ export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
           next(new RequestError('Карточка с таким ID не существует'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при удалении карточки'));
+        default: next(err);
       }
     });
 };
@@ -84,7 +84,7 @@ export const removeLike = (req: SessionRequest, res: Response, next: NextFunctio
           next(new RequestError('Карточка с таким ID не существует'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при удалении лайка'));
+        default: next(err);
       }
     });
 };

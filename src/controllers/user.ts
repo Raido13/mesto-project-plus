@@ -18,7 +18,7 @@ export const getUser = (req: Request, res: Response, next: NextFunction) => {
           next(new RequestError('Пользователь с таким ID не найден'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при запросе пользователя'));
+        default: next(err);
       }
     });
 };
@@ -26,7 +26,7 @@ export const getUser = (req: Request, res: Response, next: NextFunction) => {
 export const getAllUsers = (req: Request, res: Response, next: NextFunction) => {
   User.find({})
     .then((users) => res.send({ users }))
-    .catch(() => next(new UnexpectedError('Ошибка при запросе пользователей')));
+    .catch(next);
 };
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
@@ -38,7 +38,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
     avatar,
   })
     .then((user) => res.status(201).send({ user }))
-    .catch(() => next(new UnexpectedError('Некорректные данные при создании пользователя')));
+    .catch(next);
 };
 
 export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFunction) => {
@@ -71,7 +71,7 @@ export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFun
           next(new RequestError('Пользователь с таким ID не найден'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при запросе пользователя'));
+        default: next(err);
       }
     });
 };
@@ -105,7 +105,7 @@ export const updateUserAvatar = (req: SessionRequest, res: Response, next: NextF
           next(new RequestError('Пользователь с таким ID не найден'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при запросе пользователя'));
+        default: next(err);
       }
     });
 };
