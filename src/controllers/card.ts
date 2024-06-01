@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { SessionRequest } from '../utils/interfaces';
 import Card from '../models/card';
-import { NotFoundError, RequestError, UnexpectedError } from '../errors';
+import { RequestError } from '../errors';
 
 export const getAllCards = (req: Request, res: Response, next: NextFunction) => {
   Card.find({})
@@ -47,7 +47,7 @@ export const addLike = (req: SessionRequest, res: Response, next: NextFunction) 
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new NotFoundError('Карточка с таким ID не существует'));
+          next(new RequestError('Карточка с таким ID не существует'));
           break;
         }
         case 'ValidaitonError': {
@@ -67,7 +67,7 @@ export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new NotFoundError('Карточка с таким ID не существует'));
+          next(new RequestError('Карточка с таким ID не существует'));
           break;
         }
         default: next(err);
@@ -89,7 +89,7 @@ export const removeLike = (req: SessionRequest, res: Response, next: NextFunctio
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new NotFoundError('Карточка с таким ID не существует'));
+          next(new RequestError('Карточка с таким ID не существует'));
           break;
         }
         case 'ValidaitonError': {
