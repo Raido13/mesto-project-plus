@@ -1,9 +1,12 @@
 import express, { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import { SessionError } from './utils/interfaces';
 import userRouter from './routes/user';
 import cardRouter from './routes/card';
 import auth from './middlewares/auth';
+import { NotFoundError } from './errors';
+import { errorLogger, requestLogger } from './middlewares/logger';
+import { createUserValidation, signinValidation } from './utils/consts';
+import { createUser, login } from './controllers/user';
 
 require('dotenv').config();
 
@@ -15,21 +18,20 @@ app.use(express.urlencoded({ extended: true }));
 
 mongoose.connect('mongodb://0.0.0.0:27017/mestodb');
 
+app.use(requestLogger);
+
+app.post('/signup', createUserValidation, createUser);
+app.post('/signin', signinValidation, login);
+
 app.use(auth);
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
 
-app.use((err: SessionError, req: Request, res: Response, next: NextFunction) => {
-  const { statusCode = 500, message } = err;
+// app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+//   next(new NotFoundError('Страница не найдена'))
+// });
 
-  res
-    .status(statusCode)
-    .send({
-      message: statusCode === 500
-        ? 'Ошибка на сервере'
-        : message,
-    });
-});
+app.use(errorLogger);
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);

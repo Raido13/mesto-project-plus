@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { url } from '../utils/patterns';
 import { isEmail } from 'validator';
 
 interface IUserSchema {
@@ -25,7 +26,11 @@ const userSchema = new mongoose.Schema<IUserSchema>({
   avatar: {
     type: String,
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
-    validate: [ /https?:\/\/(?:www\.|(?!www))[\w\d-\._~:\/?#\[\]@!\$&'\(\)\*\+,;=]{1,}\.[\w]{2,}#?/.test, 'Невалидная ссылка' ]
+    validate: {
+      validator(str: string) {
+        return [ url.test(str), 'Невалидная ссылка' ]
+      }
+    }
   },
   email: {
     type: String,
@@ -36,6 +41,7 @@ const userSchema = new mongoose.Schema<IUserSchema>({
   password: {
     type: String,
     required: true,
+    select: false
   }
 });
 

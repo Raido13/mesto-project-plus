@@ -1,4 +1,5 @@
 import mongoose, { ObjectId } from 'mongoose';
+import { url } from '../utils/patterns';
 
 interface ICard {
   name: string,
@@ -12,13 +13,13 @@ const cardSchema = new mongoose.Schema<ICard>({
   name: {
     type: String,
     minlength: 2,
-    maxlength: 20,
+    maxlength: 30,
     required: true,
   },
   link: {
     type: String,
     required: true,
-    validate: [ /https?:\/\/(?:www\.|(?!www))[\w\d-\._~:\/?#\[\]@!\$&'\(\)\*\+,;=]{1,}\.[\w]{2,}#?/.test, 'Невалидная ссылка' ]
+    validate: [ url.test, 'Невалидная ссылка' ]
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,

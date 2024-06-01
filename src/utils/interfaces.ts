@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { JwtPayload } from 'jsonwebtoken';
 
 export interface SessionError extends Error {
   statusCode: number,
@@ -6,7 +7,5 @@ export interface SessionError extends Error {
 }
 
 export interface SessionRequest extends Request {
-  user?: {
-    _id: string
-  }
+  user?: JwtPayload
 }

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/user';
-import { RequestError, NotFoundError } from '../errors';
+import { RequestError, NotFoundError, ConflictError } from '../errors';
 import { SessionRequest } from '../utils/interfaces';
 import { hash, compare } from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -34,13 +34,13 @@ export const getAllUsers = (req: Request, res: Response, next: NextFunction) => 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
   const { email, password, name, about, avatar } = req.body;
 
-  User.find({ email })
+  User.findOne({ email })
     .then((user) => {
-      if (user.length > 0) {
-        return new Error('UserHasFound')
+      if (user) {
+        throw new Error('UserHasFound')
       } else {
         hash(password, 10)
-          .then(hash => 
+          .then(hash =>
             User.create({
               email,
               password: hash,
@@ -48,17 +48,20 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
               about,
               avatar,
             })
-            .then((user) => res.status(201).send({ user }))
-            .catch((err) => {
-              switch (err.message) {
-                case 'UserHasFound': {
-                  next(new NotFoundError('Пользователь с таким email существует'));
-                  break;
-                }
-                default: next(new RequestError('Ошибка при создании нового пользователя'));
-              }
+            .then((user) => {
+              const { email, name, about, avatar } = user;
+              res.status(201).send({ email, name, about, avatar })
             })
           )
+      }
+    })
+    .catch((err) => {
+      switch (err.message) {
+        case 'UserHasFound': {
+          next(new ConflictError('Пользователь с таким email существует'));
+          break;
+        }
+        default: next(new RequestError('Ошибка при создании нового пользователя'));
       }
     })
 };
@@ -67,30 +70,23 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
   const { NODE_ENV, JWT_SECRET } = process.env;
 
-  return User.findOne({ email }).select('password')
+  return User.findOne({ email }).select('+password')
     .orFail(new Error('UserNotFound'))
     .then((user) => {
       compare(password, user.password)
-        .then(isMatch =>
-          isMatch
-            ? { token: jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET as string : 'dev-secret-phrase', { expiresIn: '7d' }) }  
-            : new Error('PasswordNotMatch')
-        )
-        .then(token => 
-          token instanceof Error
-            ? token
-            : res.status(201).send(token)
-        )
+        .then(isMatch => {
+          if (isMatch) {
+            return res.status(201).send({ token: jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET as string : 'dev-secret-phrase', { expiresIn: '7d' }) })
+          } else {
+            throw new Error('Неправильный email или пароль')
+          }
+        })
       }
     )
     .catch((err: Error) => {
       switch (err.message) {
         case 'UserNotFound': {
-          next(new NotFoundError('Пользователь с таким ID не существует'));
-          break;
-        }
-        case 'PasswordNotMatch': {
-          next(new NotFoundError('Неправильный пароль'));
+          next(new RequestError('Неправильный email или пароль'));
           break;
         }
         default: next(new RequestError('Ошибка при авторизации пользователя'));
@@ -99,7 +95,7 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
 }
 
 export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFunction) => {
-  const { name, about } = req.query;
+  const { name, about } = req.body;
   const _id = req.user?._id;
 
   return User.findByIdAndUpdate(
@@ -131,7 +127,7 @@ export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFun
 };
 
 export const updateUserAvatar = (req: SessionRequest, res: Response, next: NextFunction) => {
-  const { avatar } = req.query;
+  const { avatar } = req.body;
   const _id = req.user?._id;
 
   return User.findByIdAndUpdate(

@@ -11,7 +11,7 @@ export const getAllCards = (req: Request, res: Response, next: NextFunction) => 
 };
 
 export const createCard = (req: SessionRequest, res: Response, next: NextFunction) => {
-  const { name, link } = req.query;
+  const { name, link } = req.body;
   const owner = req.user?._id;
 
   return Card.create({
