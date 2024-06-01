@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { SessionRequest } from '../utils/interfaces';
 import Card from '../models/card';
-import { RequestError, UnexpectedError } from '../errors';
+import { NotFoundError, RequestError, UnexpectedError } from '../errors';
 
 export const getAllCards = (req: Request, res: Response, next: NextFunction) => {
   Card.find({})
@@ -19,7 +19,15 @@ export const createCard = (req: SessionRequest, res: Response, next: NextFunctio
     owner,
   })
     .then((card) => res.status(201).send({ card }))
-    .catch(next);
+    .catch((err: Error) => {
+      switch (err.name) {
+        case 'ValidaitonError': {
+          next(new RequestError('Переданы некорректные данные при создании карточки'));
+          break;
+        }
+        default: next(err);
+      }
+    });
 };
 
 export const addLike = (req: SessionRequest, res: Response, next: NextFunction) => {
@@ -39,11 +47,11 @@ export const addLike = (req: SessionRequest, res: Response, next: NextFunction) 
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new RequestError('Карточка с таким ID не существует'));
+          next(new NotFoundError('Карточка с таким ID не существует'));
           break;
         }
         case 'ValidaitonError': {
-          next(new UnexpectedError('Ошибка при валидации'));
+          next(new RequestError('Переданы некорректные данные для постановки лайка'));
           break;
         }
         default: next(err);
@@ -59,7 +67,7 @@ export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new RequestError('Карточка с таким ID не существует'));
+          next(new NotFoundError('Карточка с таким ID не существует'));
           break;
         }
         default: next(err);
@@ -81,7 +89,11 @@ export const removeLike = (req: SessionRequest, res: Response, next: NextFunctio
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new RequestError('Карточка с таким ID не существует'));
+          next(new NotFoundError('Карточка с таким ID не существует'));
+          break;
+        }
+        case 'ValidaitonError': {
+          next(new RequestError('Переданы некорректные данные при снятии лайка'));
           break;
         }
         default: next(err);
