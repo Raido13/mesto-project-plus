@@ -19,7 +19,7 @@ export const createCard = (req: SessionRequest, res: Response, next: NextFunctio
     owner,
   })
     .then((card) => res.status(201).send({ card }))
-    .catch(() => next(new UnexpectedError('Некорректные данные при создании карточки')));
+    .catch(next);
 };
 
 export const addLike = (req: SessionRequest, res: Response, next: NextFunction) => {
@@ -45,7 +45,7 @@ export const addLike = (req: SessionRequest, res: Response, next: NextFunction) 
           next(new RequestError('Карточка с таким ID не существует'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при добавлении лайка'));
+        default: next(err);
       }
     });
 };
@@ -54,17 +54,19 @@ export const deleteCard = (req: SessionRequest, res: Response, next: NextFunctio
   const userId = req.user?._id;
   const { cardId } = req.params;
 
-  return Card.findOneAndDelete({ cardId })
-    .then((card) => (card!.owner === userId
-      ? res.status(200).send({ message: 'Карточка удалена' })
+  return Card.findById(cardId)
+    .then((card) => (card!.owner.toString() === userId
+      ? cardId
       : next(new ConflictError('Невозможно удалить чужую карточку'))))
+    .then(() => Card.findOneAndDelete({ cardId }))
+    .then(() => res.status(200).send({ message: 'Карточка удалена' }))
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
           next(new RequestError('Карточка с таким ID не существует'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при удалении карточки'));
+        default: next(err);
       }
     });
 };
@@ -73,10 +75,14 @@ export const removeLike = (req: SessionRequest, res: Response, next: NextFunctio
   const userId = req.user?._id;
   const { cardId } = req.params;
 
-  return Card.findOneAndUpdate({
+  return Card.findByIdAndUpdate(
     cardId,
-    $pull: { likes: userId },
-  })
+    { $pull: { likes: userId } },
+    {
+      new: true,
+      runValidators: true,
+    },
+  )
     .then(() => {
       res.status(200).send({ message: 'Лайк убран' });
     })
@@ -86,7 +92,7 @@ export const removeLike = (req: SessionRequest, res: Response, next: NextFunctio
           next(new RequestError('Карточка с таким ID не существует'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при удалении лайка'));
+        default: next(err);
       }
     });
 };

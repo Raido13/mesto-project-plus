@@ -7,6 +7,7 @@ import { errorLogger, requestLogger } from './middlewares/logger';
 import { createUserValidation, signinValidation } from './utils/consts';
 import { createUser, login } from './controllers/user';
 import errorHandler from './middlewares/error';
+import celebrateHandler from './middlewares/celebrate';
 import { NotFoundError } from './errors';
 
 require('dotenv').config();
@@ -33,6 +34,8 @@ app.use('*', (req, res, next) => {
 });
 
 app.use(errorLogger);
+
+app.use(celebrateHandler);
 
 app.use(errorHandler);
 

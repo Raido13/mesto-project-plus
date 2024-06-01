@@ -19,7 +19,11 @@ const cardSchema = new mongoose.Schema<ICard>({
   link: {
     type: String,
     required: true,
-    validate: [url.test, 'Невалидная ссылка'],
+    validate: {
+      validator(str: string) {
+        return [url.test(str), 'Невалидная ссылка'];
+      },
+    },
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,

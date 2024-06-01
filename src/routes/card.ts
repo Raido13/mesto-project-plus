@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
   getAllCards, createCard, addLike, deleteCard, removeLike,
 } from '../controllers/card';
-import { createCardValidation, updateCardValidation } from '../utils/consts';
+import { createCardValidation } from '../utils/consts';
 
 const router = Router();
 
@@ -10,10 +10,10 @@ router.get('/', getAllCards);
 
 router.post('/', createCardValidation, createCard);
 
-router.put('/:cardId/likes', updateCardValidation, addLike);
+router.put('/:cardId/likes', addLike);
 
-router.delete('/:cardId', updateCardValidation, deleteCard);
+router.delete('/:cardId', deleteCard);
 
-router.delete('/:cardId/likes', updateCardValidation, removeLike);
+router.delete('/:cardId/likes', removeLike);
 
 export default router;

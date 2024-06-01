@@ -23,7 +23,7 @@ export const getUser = (req: Request, res: Response, next: NextFunction) => {
           next(new RequestError('Пользователь с таким ID не найден'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при запросе пользователя'));
+        default: next(err);
       }
     });
 };
@@ -31,7 +31,7 @@ export const getUser = (req: Request, res: Response, next: NextFunction) => {
 export const getAllUsers = (req: Request, res: Response, next: NextFunction) => {
   User.find({})
     .then((users) => res.send({ users }))
-    .catch(() => next(new RequestError('Ошибка при запросе пользователей')));
+    .catch(next);
 };
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
@@ -65,7 +65,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
           next(new ConflictError('Пользователь с таким email существует'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при создании нового пользователя'));
+        default: next(err);
       }
     });
 };
@@ -90,7 +90,7 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
           next(new RequestError('Неправильный email или пароль'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при авторизации пользователя'));
+        default: next(err);
       }
     });
 };
@@ -125,7 +125,7 @@ export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFun
           next(new RequestError('Пользователь с таким ID не найден'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при обновлении пользователя'));
+        default: next(err);
       }
     });
 };
@@ -159,7 +159,7 @@ export const updateUserAvatar = (req: SessionRequest, res: Response, next: NextF
           next(new RequestError('Пользователь с таким ID не найден'));
           break;
         }
-        default: next(new UnexpectedError('Ошибка при обновлении аватара пользователя'));
+        default: next(err);
       }
     });
 };

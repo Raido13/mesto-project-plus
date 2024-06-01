@@ -40,13 +40,6 @@ export const updateUserAvatarValidation = celebrate({
 export const createCardValidation = celebrate({
   [Segments.BODY]: Joi.object().keys({
     name: Joi.string().min(2).max(30).required(),
-    owner: id,
     link: Joi.string().regex(url).required(),
-  }),
-});
-
-export const updateCardValidation = celebrate({
-  [Segments.PARAMS]: Joi.object().keys({
-    userId: id,
   }),
 });
