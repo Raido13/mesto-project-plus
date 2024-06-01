@@ -1,12 +1,12 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import mongoose from 'mongoose';
 import userRouter from './routes/user';
 import cardRouter from './routes/card';
 import auth from './middlewares/auth';
-import { NotFoundError } from './errors';
 import { errorLogger, requestLogger } from './middlewares/logger';
 import { createUserValidation, signinValidation } from './utils/consts';
 import { createUser, login } from './controllers/user';
+import errorHandler from './middlewares/error';
 
 require('dotenv').config();
 
@@ -27,11 +27,9 @@ app.use(auth);
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
 
-// app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-//   next(new NotFoundError('Страница не найдена'))
-// });
-
 app.use(errorLogger);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
