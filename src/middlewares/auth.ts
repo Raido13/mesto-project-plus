@@ -1,10 +1,29 @@
 import { Response, NextFunction } from 'express';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { SessionRequest } from '../utils/interfaces';
+import { AuthError } from '../errors';
 
 export default (req: SessionRequest, res: Response, next: NextFunction) => {
-  req.user = {
-    _id: '5d8b8592978f8bd833ca8133',
-  };
+  const { authorization } = req.headers;
+  const { NODE_ENV, JWT_SECRET } = process.env;
+
+  if (!authorization) {
+    throw new AuthError('Тебуется авторизация');
+  }
+
+  let user;
+
+  try {
+    user = jwt.verify(
+      authorization.split(' ')[1],
+      NODE_ENV === 'production' ? JWT_SECRET as string : 'dev-secret-phrase',
+    );
+  } catch (err) {
+    next(new AuthError('Тебуется авторизация'));
+    return;
+  }
+
+  req.user = user as JwtPayload;
 
   next();
 };

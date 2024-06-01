@@ -1,15 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
+import { hash, compare } from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import User from '../models/user';
-import { RequestError } from '../errors';
+import { RequestError, ConflictError } from '../errors';
 import { SessionRequest } from '../utils/interfaces';
 
-export const getUser = (req: Request, res: Response, next: NextFunction) => {
-  const { userId } = req.params;
+export const getUser = (req: SessionRequest, res: Response, next: NextFunction) => {
+  const userId = req.user?._id;
 
   return User.findById(userId)
     .then((user) => {
-      res.send({
-        user,
+      const {
+        name, _id, about, avatar,
+      } = user!;
+      res.status(200).send({
+        name, _id, about, avatar,
       });
     })
     .catch((err: Error) => {
@@ -30,15 +35,31 @@ export const getAllUsers = (req: Request, res: Response, next: NextFunction) => 
 };
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
-  const { name, about, avatar } = req.query;
+  const {
+    body,
+  } = req;
 
-  User.create({
-    name,
-    about,
-    avatar,
-  })
-    .then((user) => res.status(201).send({ user }))
-    .catch((err: Error) => {
+  User.findOne({ email: body.email })
+    .then((user) => {
+      if (user) {
+        throw new ConflictError('Пользователь с таким email существует');
+      } else {
+        hash(body.password, 10)
+          .then((cryptedPassword) => User.create({
+            email: body.email,
+            password: cryptedPassword,
+            name: body.name,
+            about: body.about,
+            avatar: body.avatar,
+          })
+            .then(({
+              email, name, about, avatar,
+            }) => res.status(201).send({
+              email, name, about, avatar,
+            })));
+      }
+    })
+    .catch((err) => {
       switch (err.name) {
         case 'ValidaitonError': {
           next(new RequestError('Переданы некорректные данные при создании пользователя'));
@@ -49,8 +70,33 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
+export const login = (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body;
+  const { NODE_ENV, JWT_SECRET } = process.env;
+
+  return User.findOne({ email }).select('+password')
+    .then((user) => {
+      compare(password, user!.password)
+        .then((isMatch) => {
+          if (isMatch) {
+            return res.status(201).send({ token: jwt.sign({ _id: user!._id }, NODE_ENV === 'production' ? JWT_SECRET as string : 'dev-secret-phrase', { expiresIn: '7d' }) });
+          }
+          throw new RequestError('Неправильный email или пароль');
+        });
+    })
+    .catch((err: Error) => {
+      switch (err.name) {
+        case 'CastError': {
+          next(new RequestError('Неправильный email или пароль'));
+          break;
+        }
+        default: next(err);
+      }
+    });
+};
+
 export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFunction) => {
-  const { name, about } = req.query;
+  const { name, about } = req.body;
   const _id = req.user?._id;
 
   return User.findByIdAndUpdate(
@@ -85,7 +131,7 @@ export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFun
 };
 
 export const updateUserAvatar = (req: SessionRequest, res: Response, next: NextFunction) => {
-  const { avatar } = req.query;
+  const { avatar } = req.body;
   const _id = req.user?._id;
 
   return User.findByIdAndUpdate(
