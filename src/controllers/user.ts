@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { hash, compare } from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/user';
-import { RequestError, ConflictError, UnexpectedError } from '../errors';
+import { RequestError, ConflictError, NotFoundError } from '../errors';
 import { SessionRequest } from '../utils/interfaces';
 
 export const getUser = (req: SessionRequest, res: Response, next: NextFunction) => {
@@ -23,7 +23,7 @@ export const getUser = (req: SessionRequest, res: Response, next: NextFunction) 
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new RequestError('Пользователь с таким ID не найден'));
+          next(new NotFoundError('Пользователь с таким ID не найден'));
           break;
         }
         default: next(err);
@@ -64,8 +64,8 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
     })
     .catch((err) => {
       switch (err.name) {
-        case 'CastError': {
-          next(new ConflictError('Пользователь с таким email существует'));
+        case 'ValidaitonError': {
+          next(new RequestError('Переданы некорректные данные при создании пользователя'));
           break;
         }
         default: next(err);
@@ -121,11 +121,11 @@ export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFun
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new RequestError('Пользователь с таким ID не найден'));
+          next(new NotFoundError('Пользователь с таким ID не найден'));
           break;
         }
         case 'ValidaitonError': {
-          next(new RequestError('Пользователь с таким ID не найден'));
+          next(new RequestError('Переданы некорректные данные при обновлении профиля'));
           break;
         }
         default: next(err);
@@ -155,11 +155,11 @@ export const updateUserAvatar = (req: SessionRequest, res: Response, next: NextF
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
-          next(new RequestError('Пользователь с таким ID не найден'));
+          next(new NotFoundError('Пользователь с таким ID не найден'));
           break;
         }
         case 'ValidaitonError': {
-          next(new RequestError('Пользователь с таким ID не найден'));
+          next(new RequestError('Переданы некорректные данные при обновлении профиля'));
           break;
         }
         default: next(err);
