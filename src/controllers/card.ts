@@ -27,28 +27,28 @@ export const addLike = (req: SessionRequest, res: Response, next: NextFunction) 
   const { cardId } = req.params;
 
   return Card.findByIdAndUpdate(
-      cardId,
-      { $addToSet: { likes: userId } },
-      {
-        new: true,
-        runValidators: true,
-      },
-    )
-      .orFail(new Error('CardNotFound'))
-      .then(() => res.status(200).send({ message: 'Добавлен Лайк' }))
-      .catch((err: Error) => {
-        switch (err.name) {
-          case 'CastError': {
-            next(new RequestError('Карточка с таким ID не существует'));
-            break;
-          }
-          case 'ValidaitonError': {
-            next(new UnexpectedError('Ошибка при валидации'));
-            break;
-          }
-          default: next(new UnexpectedError('Ошибка при добавлении лайка'));
+    cardId,
+    { $addToSet: { likes: userId } },
+    {
+      new: true,
+      runValidators: true,
+    },
+  )
+    .orFail(new Error('CardNotFound'))
+    .then(() => res.status(200).send({ message: 'Добавлен Лайк' }))
+    .catch((err: Error) => {
+      switch (err.name) {
+        case 'CastError': {
+          next(new RequestError('Карточка с таким ID не существует'));
+          break;
         }
-      });
+        case 'ValidaitonError': {
+          next(new UnexpectedError('Ошибка при валидации'));
+          break;
+        }
+        default: next(new UnexpectedError('Ошибка при добавлении лайка'));
+      }
+    });
 };
 
 export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
@@ -72,19 +72,19 @@ export const removeLike = (req: SessionRequest, res: Response, next: NextFunctio
   const { cardId } = req.params;
 
   return Card.findOneAndUpdate({
-      cardId,
-      $pull: { likes: userId },
+    cardId,
+    $pull: { likes: userId },
+  })
+    .then(() => {
+      res.status(200).send({ message: 'Лайк убран' });
     })
-      .then(() => {
-        res.status(200).send({ message: 'Лайк убран' });
-      })
-      .catch((err: Error) => {
-        switch (err.name) {
-          case 'CastError': {
-            next(new RequestError('Карточка с таким ID не существует'));
-            break;
-          }
-          default: next(new UnexpectedError('Ошибка при удалении лайка'));
+    .catch((err: Error) => {
+      switch (err.name) {
+        case 'CastError': {
+          next(new RequestError('Карточка с таким ID не существует'));
+          break;
         }
-      });
+        default: next(new UnexpectedError('Ошибка при удалении лайка'));
+      }
+    });
 };

@@ -19,7 +19,7 @@ app.use('/users', userRouter);
 app.use('/cards', cardRouter);
 
 app.use('*', (req, res) => {
-  throw new NotFoundError('Запрашиваемый ресурс не найден')
+  throw new NotFoundError('Запрашиваемый ресурс не найден');
 });
 
 app.use((err: SessionError, req: Request, res: Response, next: NextFunction) => {

@@ -9,7 +9,7 @@ export const getUser = (req: Request, res: Response, next: NextFunction) => {
   return User.findById(userId)
     .then((user) => {
       res.send({
-        user
+        user,
       });
     })
     .catch((err: Error) => {
