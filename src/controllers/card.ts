@@ -1,12 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { SessionRequest } from '../utils/interfaces';
 import Card from '../models/card';
-import User from '../models/user';
-import { NotFoundError, RequestError } from '../errors';
+import { RequestError, UnexpectedError } from '../errors';
 
 export const getAllCards = (req: Request, res: Response, next: NextFunction) => {
   Card.find({})
-    .then((cards) => res.status(201).send({ cards }))
+    .then((cards) => res.status(200).send({ cards }))
     .catch(next);
 };
 
@@ -20,16 +19,14 @@ export const createCard = (req: SessionRequest, res: Response, next: NextFunctio
     owner,
   })
     .then((card) => res.status(201).send({ card }))
-    .catch(() => next(new RequestError('Некорректные данные при создании карточки')));
+    .catch(() => next(new UnexpectedError('Некорректные данные при создании карточки')));
 };
 
 export const addLike = (req: SessionRequest, res: Response, next: NextFunction) => {
   const userId = req.user?._id;
   const { cardId } = req.params;
 
-  return User.findById(userId)
-    .orFail(new Error('UserNotFound'))
-    .then(() => Card.findByIdAndUpdate(
+  return Card.findByIdAndUpdate(
       cardId,
       { $addToSet: { likes: userId } },
       {
@@ -39,32 +36,34 @@ export const addLike = (req: SessionRequest, res: Response, next: NextFunction) 
     )
       .orFail(new Error('CardNotFound'))
       .then(() => res.status(200).send({ message: 'Добавлен Лайк' }))
-    )
-    .catch((err: Error) => {
-      switch (err.message) {
-        case 'UserNotFound': {
-          next(new NotFoundError('Пользователь с таким ID не существует'));
-          break;
+      .catch((err: Error) => {
+        switch (err.name) {
+          case 'CastError': {
+            next(new RequestError('Карточка с таким ID не существует'));
+            break;
+          }
+          case 'ValidaitonError': {
+            next(new UnexpectedError('Ошибка при валидации'));
+            break;
+          }
+          default: next(new UnexpectedError('Ошибка при добавлении лайка'));
         }
-        case 'CardNotFound': {
-          next(new NotFoundError('Карточка с таким ID не существует'));
-          break;
-        }
-        default: next(new RequestError('Ошибка при добавлении лайка'));
-      }
-    });
+      });
 };
 
 export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
   const { cardId } = req.params;
 
   return Card.findOneAndDelete({ cardId })
-    .orFail(new Error('CardNotFound'))
     .then(() => res.status(200).send({ message: 'Карточка удалена' }))
     .catch((err: Error) => {
-      err.message === 'CardNotFound'
-        ? next(new NotFoundError('Карточка с таким ID не существует'))
-        : next(new RequestError('Ошибка при удалении карточки'));
+      switch (err.name) {
+        case 'CastError': {
+          next(new RequestError('Карточка с таким ID не существует'));
+          break;
+        }
+        default: next(new UnexpectedError('Ошибка при удалении карточки'));
+      }
     });
 };
 
@@ -72,28 +71,20 @@ export const removeLike = (req: SessionRequest, res: Response, next: NextFunctio
   const userId = req.user?._id;
   const { cardId } = req.params;
 
-  return User.findById(userId)
-    .orFail(new Error('UserNotFound'))
-    .then(() => Card.findOneAndUpdate({
+  return Card.findOneAndUpdate({
       cardId,
       $pull: { likes: userId },
     })
-      .orFail(new Error('CardNotFound'))
       .then(() => {
         res.status(200).send({ message: 'Лайк убран' });
       })
-    )
-    .catch((err: Error) => {
-      switch (err.message) {
-        case 'UserNotFound': {
-          next(new NotFoundError('Пользователь с таким ID не существует'));
-          break;
+      .catch((err: Error) => {
+        switch (err.name) {
+          case 'CastError': {
+            next(new RequestError('Карточка с таким ID не существует'));
+            break;
+          }
+          default: next(new UnexpectedError('Ошибка при удалении лайка'));
         }
-        case 'CardNotFound': {
-          next(new NotFoundError('Карточка с таким ID не существует'));
-          break;
-        }
-        default: next(new RequestError('Ошибка при удалении лайка'));
-      }
-    });
+      });
 };

@@ -4,6 +4,7 @@ import { SessionError } from './utils/interfaces';
 import userRouter from './routes/user';
 import cardRouter from './routes/card';
 import auth from './middlewares/auth';
+import { NotFoundError } from './errors';
 
 const { PORT = 3000 } = process.env;
 const app = express();
@@ -16,6 +17,10 @@ mongoose.connect('mongodb://0.0.0.0:27017/mestodb');
 app.use(auth);
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
+
+app.use('*', (req, res) => {
+  throw new NotFoundError('Запрашиваемый ресурс не найден')
+});
 
 app.use((err: SessionError, req: Request, res: Response, next: NextFunction) => {
   const { statusCode = 500, message } = err;

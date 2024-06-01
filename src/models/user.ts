@@ -1,7 +1,9 @@
 import mongoose from 'mongoose';
 
 interface IUserSchema {
-  [key: string]: string
+  name: string,
+  about: string,
+  avatar: string
 }
 
 const userSchema = new mongoose.Schema<IUserSchema>({

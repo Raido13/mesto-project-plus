@@ -1,32 +1,32 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/user';
-import { RequestError, NotFoundError } from '../errors';
+import { RequestError, UnexpectedError } from '../errors';
 import { SessionRequest } from '../utils/interfaces';
 
 export const getUser = (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.params;
 
   return User.findById(userId)
-    .orFail(new Error('UserNotFound'))
     .then((user) => {
-      const {
-        name, _id, about, avatar,
-      } = user;
       res.send({
-        name, _id, about, avatar,
+        user
       });
     })
     .catch((err: Error) => {
-      err.message === 'UserNotFound'
-        ? next(new NotFoundError('Пользователь с таким ID не найден'))
-        : next(new RequestError('Ошибка при запросе пользователя'));
+      switch (err.name) {
+        case 'CastError': {
+          next(new RequestError('Пользователь с таким ID не найден'));
+          break;
+        }
+        default: next(new UnexpectedError('Ошибка при запросе пользователя'));
+      }
     });
 };
 
 export const getAllUsers = (req: Request, res: Response, next: NextFunction) => {
   User.find({})
     .then((users) => res.send({ users }))
-    .catch(() => next(new RequestError('Ошибка при запросе пользователей')));
+    .catch(() => next(new UnexpectedError('Ошибка при запросе пользователей')));
 };
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
@@ -38,7 +38,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
     avatar,
   })
     .then((user) => res.status(201).send({ user }))
-    .catch(() => next(new RequestError('Некорректные данные при создании пользователя')));
+    .catch(() => next(new UnexpectedError('Некорректные данные при создании пользователя')));
 };
 
 export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFunction) => {
@@ -58,17 +58,20 @@ export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFun
       runValidators: true,
     },
   )
-    .orFail(new Error('UserNotFound'))
     .then(() => {
       res.status(200).send({ _id, name, about });
     })
     .catch((err: Error) => {
-      switch (err.message) {
-        case 'UserNotFound': {
-          next(new NotFoundError('Пользователь с таким ID не существует'));
+      switch (err.name) {
+        case 'CastError': {
+          next(new RequestError('Пользователь с таким ID не найден'));
           break;
         }
-        default: next(new RequestError('Ошибка при обновлении пользователя'));
+        case 'ValidaitonError': {
+          next(new RequestError('Пользователь с таким ID не найден'));
+          break;
+        }
+        default: next(new UnexpectedError('Ошибка при запросе пользователя'));
       }
     });
 };
@@ -89,17 +92,20 @@ export const updateUserAvatar = (req: SessionRequest, res: Response, next: NextF
       runValidators: true,
     },
   )
-    .orFail(new Error('UserNotFound'))
     .then(() => {
       res.status(200).send({ avatar });
     })
     .catch((err: Error) => {
-      switch (err.message) {
-        case 'UserNotFound': {
-          next(new NotFoundError('Пользователь с таким ID не существует'));
+      switch (err.name) {
+        case 'CastError': {
+          next(new RequestError('Пользователь с таким ID не найден'));
           break;
         }
-        default: next(new RequestError('Ошибка при обновлении аватара пользователя'));
+        case 'ValidaitonError': {
+          next(new RequestError('Пользователь с таким ID не найден'));
+          break;
+        }
+        default: next(new UnexpectedError('Ошибка при запросе пользователя'));
       }
     });
 };
