@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import { url } from '../utils/patterns';
 import { isEmail } from 'validator';
+import { url } from '../utils/patterns';
 
 interface IUserSchema {
   name: string,
@@ -15,34 +15,34 @@ const userSchema = new mongoose.Schema<IUserSchema>({
     type: String,
     minlength: 2,
     maxlength: 30,
-    default: 'Жак-Ив Кусто'
+    default: 'Жак-Ив Кусто',
   },
   about: {
     type: String,
     minlength: 2,
     maxlength: 200,
-    default: 'Исследователь'
+    default: 'Исследователь',
   },
   avatar: {
     type: String,
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
     validate: {
       validator(str: string) {
-        return [ url.test(str), 'Невалидная ссылка' ]
-      }
-    }
+        return [url.test(str), 'Невалидная ссылка'];
+      },
+    },
   },
   email: {
     type: String,
     required: true,
     unique: true,
-    validate: [ isEmail, 'Невалидный email' ]
+    validate: [isEmail, 'Невалидный email'],
   },
   password: {
     type: String,
     required: true,
-    select: false
-  }
+    select: false,
+  },
 });
 
 export default mongoose.model<IUserSchema>('user', userSchema);

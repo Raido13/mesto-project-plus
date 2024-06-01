@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
+import { hash, compare } from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import User from '../models/user';
 import { RequestError, ConflictError, UnexpectedError } from '../errors';
 import { SessionRequest } from '../utils/interfaces';
-import { hash, compare } from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 
 export const getUser = (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.params;
@@ -35,26 +35,28 @@ export const getAllUsers = (req: Request, res: Response, next: NextFunction) => 
 };
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
-  const { email, password, name, about, avatar } = req.body;
+  const {
+    body,
+  } = req;
 
-  User.findOne({ email })
+  User.findOne({ email: body.email })
     .then((user) => {
       if (user) {
+        throw new ConflictError('Пользователь с таким email существует');
       } else {
-        hash(password, 10)
-          .then(hash =>
-            User.create({
-              email,
-              password: hash,
-              name,
-              about,
-              avatar,
-            })
-            .then((user) => {
-              const { email, name, about, avatar } = user;
-              res.status(201).send({ email, name, about, avatar })
-            })
-          )
+        hash(body.password, 10)
+          .then((cryptedPassword) => User.create({
+            email: body.email,
+            password: cryptedPassword,
+            name: body.name,
+            about: body.about,
+            avatar: body.avatar,
+          })
+            .then(({
+              email, name, about, avatar,
+            }) => res.status(201).send({
+              email, name, about, avatar,
+            })));
       }
     })
     .catch((err) => {
@@ -65,7 +67,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
         }
         default: next(new UnexpectedError('Ошибка при создании нового пользователя'));
       }
-    })
+    });
 };
 
 export const login = (req: Request, res: Response, next: NextFunction) => {
@@ -75,15 +77,13 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
   return User.findOne({ email }).select('+password')
     .then((user) => {
       compare(password, user!.password)
-        .then(isMatch => {
+        .then((isMatch) => {
           if (isMatch) {
-            return res.status(201).send({ token: jwt.sign({ _id: user!._id }, NODE_ENV === 'production' ? JWT_SECRET as string : 'dev-secret-phrase', { expiresIn: '7d' }) })
-          } else {
-            throw new RequestError('Неправильный email или пароль')
+            return res.status(201).send({ token: jwt.sign({ _id: user!._id }, NODE_ENV === 'production' ? JWT_SECRET as string : 'dev-secret-phrase', { expiresIn: '7d' }) });
           }
-        })
-      }
-    )
+          throw new RequestError('Неправильный email или пароль');
+        });
+    })
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
@@ -92,8 +92,8 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
         }
         default: next(new UnexpectedError('Ошибка при авторизации пользователя'));
       }
-    })
-}
+    });
+};
 
 export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFunction) => {
   const { name, about } = req.body;

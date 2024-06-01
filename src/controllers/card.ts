@@ -27,13 +27,13 @@ export const addLike = (req: SessionRequest, res: Response, next: NextFunction) 
   const { cardId } = req.params;
 
   return Card.findByIdAndUpdate(
-      cardId,
-      { $addToSet: { likes: userId } },
-      {
-        new: true,
-        runValidators: true,
-      },
-    )
+    cardId,
+    { $addToSet: { likes: userId } },
+    {
+      new: true,
+      runValidators: true,
+    },
+  )
     .then(() => res.status(200).send({ message: 'Добавлен Лайк' }))
     .catch((err: Error) => {
       switch (err.name) {
@@ -55,11 +55,9 @@ export const deleteCard = (req: SessionRequest, res: Response, next: NextFunctio
   const { cardId } = req.params;
 
   return Card.findOneAndDelete({ cardId })
-    .then((card) =>
-      card!.owner === userId
-        ? res.status(200).send({ message: 'Карточка удалена' })
-        : next(new ConflictError('Невозможно удалить чужую карточку'))
-    )
+    .then((card) => (card!.owner === userId
+      ? res.status(200).send({ message: 'Карточка удалена' })
+      : next(new ConflictError('Невозможно удалить чужую карточку'))))
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {
@@ -76,12 +74,12 @@ export const removeLike = (req: SessionRequest, res: Response, next: NextFunctio
   const { cardId } = req.params;
 
   return Card.findOneAndUpdate({
-      cardId,
-      $pull: { likes: userId },
-    })
+    cardId,
+    $pull: { likes: userId },
+  })
     .then(() => {
-        res.status(200).send({ message: 'Лайк убран' });
-      })
+      res.status(200).send({ message: 'Лайк убран' });
+    })
     .catch((err: Error) => {
       switch (err.name) {
         case 'CastError': {

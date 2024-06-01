@@ -7,6 +7,7 @@ import { errorLogger, requestLogger } from './middlewares/logger';
 import { createUserValidation, signinValidation } from './utils/consts';
 import { createUser, login } from './controllers/user';
 import errorHandler from './middlewares/error';
+import { NotFoundError } from './errors';
 
 require('dotenv').config();
 
@@ -26,6 +27,10 @@ app.post('/signin', signinValidation, login);
 app.use(auth);
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
+
+app.use('*', (req, res, next) => {
+  next(new NotFoundError('Страница не найдена'));
+});
 
 app.use(errorLogger);
 
