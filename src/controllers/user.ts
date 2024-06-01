@@ -5,8 +5,11 @@ import User from '../models/user';
 import { RequestError, ConflictError, UnexpectedError } from '../errors';
 import { SessionRequest } from '../utils/interfaces';
 
-export const getUser = (req: Request, res: Response, next: NextFunction) => {
-  const { userId } = req.params;
+export const getUser = (req: SessionRequest, res: Response, next: NextFunction) => {
+  let { userId } = req.params;
+  if (!userId) {
+    userId = req.user?._id;
+  }
 
   return User.findById(userId)
     .then((user) => {

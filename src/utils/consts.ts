@@ -1,11 +1,5 @@
 import { celebrate, Segments, Joi } from 'celebrate';
-import { url, id } from './patterns';
-
-export const getUserValidation = celebrate({
-  [Segments.PARAMS]: Joi.object().keys({
-    userId: id,
-  }),
-});
+import { url } from './patterns';
 
 export const createUserValidation = celebrate({
   [Segments.BODY]: Joi.object().keys({
