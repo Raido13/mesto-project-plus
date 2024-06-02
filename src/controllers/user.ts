@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user';
 import { RequestError, ConflictError } from '../errors';
 import { SessionRequest } from '../utils/interfaces';
+import { StatusCodes } from '../utils/statusCodes';
 
 export const getUser = (req: SessionRequest, res: Response, next: NextFunction) => {
   const userId = req.user?._id;
@@ -13,7 +14,7 @@ export const getUser = (req: SessionRequest, res: Response, next: NextFunction) 
       const {
         name, _id, about, avatar,
       } = user!;
-      res.status(200).send({
+      res.status(StatusCodes.Success).send({
         name, _id, about, avatar,
       });
     })
@@ -54,7 +55,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
           })
             .then(({
               email, name, about, avatar,
-            }) => res.status(201).send({
+            }) => res.status(StatusCodes.Created).send({
               email, name, about, avatar,
             })));
       }
@@ -79,7 +80,7 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
       compare(password, user!.password)
         .then((isMatch) => {
           if (isMatch) {
-            return res.status(201).send({ token: jwt.sign({ _id: user!._id }, NODE_ENV === 'production' ? JWT_SECRET as string : 'dev-secret-phrase', { expiresIn: '7d' }) });
+            return res.status(StatusCodes.Created).send({ token: jwt.sign({ _id: user!._id }, NODE_ENV === 'production' ? JWT_SECRET as string : 'dev-secret-phrase', { expiresIn: '7d' }) });
           }
           throw new RequestError('Неправильный email или пароль');
         });
@@ -113,7 +114,7 @@ export const updateUserInfo = (req: SessionRequest, res: Response, next: NextFun
     },
   )
     .then(() => {
-      res.status(200).send({ _id, name, about });
+      res.status(StatusCodes.Success).send({ _id, name, about });
     })
     .catch((err: Error) => {
       switch (err.name) {
@@ -147,7 +148,7 @@ export const updateUserAvatar = (req: SessionRequest, res: Response, next: NextF
     },
   )
     .then(() => {
-      res.status(200).send({ avatar });
+      res.status(StatusCodes.Success).send({ avatar });
     })
     .catch((err: Error) => {
       switch (err.name) {

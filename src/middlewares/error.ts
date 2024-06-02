@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { SessionError } from '../utils/interfaces';
+import { StatusCodes } from '../utils/statusCodes';
 
 export default (err: SessionError, req: Request, res: Response, next: NextFunction) => {
-  const { statusCode = 500, message } = err;
+  const { statusCode = StatusCodes.Unexpect, message } = err;
 
   res.status(statusCode).send({
-    message: statusCode === 500
+    message: statusCode === StatusCodes.Unexpect
       ? 'Ошибка на сервере'
       : message,
   });
